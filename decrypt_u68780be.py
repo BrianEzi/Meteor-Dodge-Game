@@ -1,9 +1,6 @@
 import sys
 import os 
 
-# code to get the arguments and read the file
-# Reference: https://www.tutorialspoint.com/How-to-read-a-file-from-command-line-using-Python
-directory = sys.argv[1]
 filecount=0
 for entry in os.scandir(directory):
 	if entry.path.endswith(".txt") and entry.is_file():
