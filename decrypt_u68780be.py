@@ -1,8 +1,6 @@
 import sys
 import os 
 
-# code to get the arguments and read the file
-# Reference: https://www.tutorialspoint.com/How-to-read-a-file-from-command-line-using-Python
 directory = sys.argv[1]
 filecount=0
 for entry in os.scandir(directory):
@@ -26,13 +24,11 @@ for entry in os.scandir(directory):
 		else:
 			MORSE_CODE_DICT = { 'A':'.-', 'B':'-...','C':'-.-.', 'D':'-..', 'E':'.','F':'..-.', 'G':'--.', 'H':'....','I':'..', 'J':'.---', 'K':'-.-','L':'.-..', 'M':'--', 'N':'-.', 'O':'---', 'P':'.--.', 'Q':'--.-','R':'.-.', 'S':'...', 'T':'-','U':'..-', 'V':'...-', 'W':'.--','X':'-..-', 'Y':'-.--', 'Z':'--..','1':'.----', '2':'..---', '3':'...--','4':'....-', '5':'.....', '6':'-....','7':'--...', '8':'---..', '9':'----.','0':'-----', ', ':'--..--', '.':'.-.-.-','?':'..--..', '/':'-..-.', '-':'-....-','(':'-.--.', ')':'-.--.-'}
 			encrypted=encrypted[1].split()
-			#print(encrypted)
 			for letter in encrypted:
 				if letter=="/":
 					decrypted+=" "
 				else:
-					decrypted+=list(MORSE_CODE_DICT.keys())[list(MORSE_CODE_DICT
-                .values()).index(letter)].lower()
+					decrypted+=list(MORSE_CODE_DICT.keys())[list(MORSE_CODE_DICT.values()).index(letter)].lower()
 		for i in range(filecount):
 			currentpath=str(i+1)+".txt"
 			if entry.path.endswith(currentpath):
