@@ -1,13 +1,12 @@
 import sys
 import os
 
-directory = sys.argv[2] #gets the directory from the location entered into the command line
+directory = sys.argv[2] 
 filecount=0
-#calculatees the number of files
+
 for entry in os.scandir(directory):
     if entry.path.endswith(".txt") and entry.is_file():
         filecount+=1
-#iterates through each file in the directory and runs code for spellchecker for each file
 for entry in os.scandir(directory):
     if entry.path.endswith(".txt") and entry.is_file():
         punc_count=0
@@ -15,8 +14,6 @@ for entry in os.scandir(directory):
         upper_count=0
         word_count=0
         correctwords=0
-        # code to get the arguments and read the file
-        # Reference: https://www.tutorialspoint.com/How-to-read-a-file-from-command-line-using-Python
         punctuation=[".","?","!",",",":",";","-","(",")","{","}","[","]","'","\"","...",]
         englishwordslist=[]
         with open(sys.argv[1], 'r') as f:
@@ -24,7 +21,6 @@ for entry in os.scandir(directory):
         englishwordslist=englishwords.split("\n")
         with open(entry.path, 'r') as f:
             inputfile = f.read()
-        #number of words and uppercase
         words=inputfile.split()
         for x in range(len(words)):
             temp=words[x]
@@ -66,5 +62,3 @@ for entry in os.scandir(directory):
             f.write("\nNumber of words in file: "+str(word_count))
             f.write("\nNumber of correct words in file: "+str(correctwords))
             f.write("\nNumber of incorrect words in file: "+str(word_count-correctwords))
-            # with open(sys.argv[3], 'w') as f:
-            #     f.write()
