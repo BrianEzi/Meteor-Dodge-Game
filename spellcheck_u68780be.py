@@ -34,9 +34,6 @@ for entry in os.scandir(directory):
                 if (asc>=48 and asc<=57):
                     num_count+=words[x].count(temp[y])
                     words[x]=words[x].replace(chr(asc),"")
-                if y>1:
-                    if ord(temp[y]) == 46 and ord(temp[y-1])==46 and ord(temp[y-2])==46:
-                        numcount-=2
             for y in temp:
                 if y.lower()!=y:
                     words[x]=words[x].lower()
