@@ -26,7 +26,7 @@ def pressing(event):
 				x+=10
 				canvas.itemconfigure(player,image=astronaut_turbo_right)
 	canvas.move(player,x,y)
-
+	SetBorders()
 #checks when a key has been released then removes it from the currently active keys
 def released(event):
 	lastkey=""
@@ -38,6 +38,21 @@ def released(event):
 	with open("prevkey.txt","w") as f:
 		f.write(lastkey)
 
+def SetBorders():
+	position=(canvas.coords(player))
+	if position[0]<0:
+		canvas.coords(player,0,position[1])
+	elif position[0]+90>width:
+		canvas.coords(player,width-90,position[1])
+	elif position[1]+90 > height:
+		canvas.coords(player,position[0], height-90)
+	elif position[1] < 0:
+		canvas.coords(player,position[0],0)
+	position.clear()
+
+def click(event):
+	x, y = event.x, event.y
+	print('{}, {}'.format(x, y))
 #sets the window dimensions and creates the window
 def setWindowDimensions(w,h,t):
 	window=Tk()
@@ -77,10 +92,12 @@ invader=canvas.create_image(250,0,image=spaceship,anchor='nw')
 #binds the control for the character
 canvas.bind("<KeyPress>",pressing)
 canvas.bind("<KeyRelease>",released)
+canvas.bind("<Button-1>",click)
 canvas.focus_set()
 
 canvas.pack()
 
+#SetBorders()
 window.mainloop()
 
 #clears the file storing all active keys
