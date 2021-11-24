@@ -8,12 +8,12 @@ def Asteroid_Velocity(i,targetpos,speed):
 	if shot[i]==False :
 		if firstshot==True:
 			targetpos=targets[i]
-		print(targetpos)
+		#print(targetpos)
 		distance_x= targetpos[0]-startpos[0]
 		distance_y=targetpos[1]-startpos[1]
 		speed_x=distance_x/speed
 		speed_y=distance_y/speed
-		print(speed_x,speed_y)
+		#print(speed_x,speed_y)
 		velocity[i]=[speed_x,speed_y]
 		targets[i]=canvas.coords(player) #store the current target relating to the current available asteroid
 		shot[i]=True
@@ -55,22 +55,22 @@ def pressing(event):
 				y-=10
 				canvas.itemconfigure(player,image=astronaut_turbo)
 				with open("lastpos.txt","w") as f:
-					f.write(1)
+					f.write("1")
 			elif letter=="a":
 				x-=10
 				canvas.itemconfigure(player,image=astronaut_turbo_left)
 				with open("lastpos.txt","w") as f:
-					f.write(2)
+					f.write("2")
 			elif letter=="s":
 				y+=10
 				canvas.itemconfigure(player,image=astronaut_turbo_down)
 				with open("lastpos.txt","w") as f:
-					f.write(3)
+					f.write("3")
 			elif letter=="d":
 				x+=10
 				canvas.itemconfigure(player,image=astronaut_turbo_right)
 				with open("lastpos.txt","w") as f:
-					f.write(4)
+					f.write("4")
 #checks when a key has been released then removes it from the currently active keys
 def released(event):
 	lastkey=""
@@ -129,11 +129,16 @@ def setWindowDimensions(w,h,t):
 
 #function to play the game once it started
 def Play_Game():
+	canvas.pack()
 	global x,y
 	global direction
 	global buffer
 	global speed
 	global firstshot
+	global score
+	score+=1
+	txt="\nScore:"+str(score)
+	canvas.itemconfigure(scoreText,text=txt)
 	if buffer==10:
 		buffer=0
 		firstshot=False
@@ -145,7 +150,7 @@ def Play_Game():
 	resetAsteroids()
 	Asteroid_Velocity(buffer,canvas.coords(player),speed)
 	window.after(50,shoot(velocity))#shoots the asteroid after 2 seconds wait
-	print(shot,velocity,targets)
+	# print(shot,velocity,targets)
 	with open("lastpos.txt","r") as f:
 		coordskey=f.read()
 	playercoords=""
@@ -160,6 +165,7 @@ def Play_Game():
 	for i in range(10):
 		asteroidcoords=Coordinates(asteroids[i], asteroid.width(), asteroid.height())
 		if collision(asteroidcoords,playercoords):
+			print("OW!")
 
 
 
@@ -172,7 +178,7 @@ def Play_Game():
 		speed=speed*0.999
 		window.after(90,Play_Game)
 def collision(a,b):
-	if a[0]<b[2] and a[2]>b[0] and a[1]<b[3] and a[3]>b[1]:
+	if a[0][0]<b[1][0] and a[1][0]>b[0][0] and a[0][1]<b[1][1] and a[1][1]>b[0][1]:
 		return True
 	return False
 
@@ -221,8 +227,20 @@ for i in range(10):
 	velocity.append([])
 invader=canvas.create_image(width/2-spaceship.width()/2,0,image=spaceship,anchor='nw')
 with open("lastpos.txt","w") as f:
-	f.write(str(canvas.coords(invader)[0])+","+ str(canvas.coords(invader)[1]))
+	f.write("1")
 canvas.create_image(0,0,image=spacedust,anchor='nw')
+
+
+
+x,y=0,0
+direction="left"
+buffer=0
+speed=100
+firstshot=True
+
+score=0
+txt="\n Score:"+str(score)
+scoreText = canvas.create_text( width/2 , 10 , fill="white" , font="Times 20 italic bold", text=txt)
 
 #binds the control for the character
 canvas.bind("<KeyPress>",pressing)
@@ -230,13 +248,6 @@ canvas.bind("<KeyRelease>",released)
 canvas.bind("<Button-1>",click)
 canvas.focus_set()
 
-
-x,y=0,0
-
-direction="left"
-buffer=0
-speed=100
-firstshot=True
 
 menu=Toplevel(window)
 menu.geometry("300x300")
