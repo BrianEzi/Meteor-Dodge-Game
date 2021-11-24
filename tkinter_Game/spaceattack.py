@@ -25,7 +25,7 @@ def shoot(velocity):
 			canvas.move(asteroids[i],velocity[i][0],velocity[i][1])
 #resets all asteroids back to their original position where they are following the spaceship
 def resetAsteroids():
-	global direction
+	global direction, impact, shot, velocity, asteroids
 	invaderpos=canvas.coords(invader)
 	for i in range(10):
 		asteroidpos=canvas.coords(asteroids[i])		
@@ -37,7 +37,10 @@ def resetAsteroids():
 		if asteroidpos[0]+50<0 or asteroidpos[0]>width or asteroidpos[1]+50> height or  asteroidpos[1]< 0:
 			window.after(50,canvas.move(asteroids[i],invaderpos[0]+spaceship.width()/2-asteroidpos[0],spaceship.height()-30 - asteroidpos[1]))
 			shot[i]=False
-
+			impact[i]=False
+		if impact[i]==True:
+			canvas.move(player,5*velocity[i][0], 5*velocity[i][1])
+			canvas.move(asteroids[i],-10*velocity[i][0],-10*velocity[i][1])
 #checks which keys are currently being pressed then adjusts the characters direction accordingly
 #active keys are stored in external file called prevkey.txt
 def pressing(event):
@@ -48,6 +51,8 @@ def pressing(event):
 		with open("prevkey.txt","a") as f:
 			f.write(event.char)
 		lastkey+=event.char
+	movePlayer(lastkey)
+def movePlayer(lastkey):
 	global x,y
 	if lastkey!="":
 		for letter in lastkey:
@@ -78,10 +83,11 @@ def released(event):
 		lastkey=f.read()
 	for letter in lastkey:
 		if event.keysym==letter:
+			print(event.keysym)
 			lastkey=lastkey.replace(event.keysym,"")
 	with open("prevkey.txt","w") as f:
 		f.write(lastkey)
-
+	movePlayer(lastkey)
 #prevents the player from moving off screen 
 def SetBorders():
 	position=(canvas.coords(player))
@@ -126,22 +132,38 @@ def setWindowDimensions(w,h,t):
 	window.geometry('%dx%d+%d+%d' % (w, h, x, y)) # window size
 
 	return window
-
+def PlaceSpacedust():
+	global spacedustimg, spacedust, spacedustx,spacedusty
+	spacedust = canvas.create_image(0,0,image=spacedustimg,anchor='nw')
+	spacedustx = random.randint(0,width- spacedustimg.width())
+	spacedusty = random.randint(0,height- spacedustimg.height())
+	canvas.move(spacedust, spacedustx, spacedusty)
+def MoveSpacedust():
+	global spacedustimg, spacedust, spacedustx,spacedusty
+	canvas.move(spacedust,spacedustx*-1,spacedusty*-1)
+	spacedust = canvas.create_image(0,0,image=spacedustimg,anchor='nw')
+	spacedustx = random.randint(0,width- spacedustimg.width())
+	spacedusty = random.randint(0,height- spacedustimg.height())
+	canvas.move(spacedust, spacedustx, spacedusty)
 def CreateAsteroids():
-	global asteroids, shot, targets, velocity
+	global asteroids, shot, targets, velocity, impact
 	asteroids=[]
 	shot=[]
 	targets=[]
 	velocity=[]
+	impact=[]
 	for i in range(10):
 		asteroids.append(canvas.create_image(width/2 -20, + spaceship.height() - 30,image=asteroid,anchor='nw'))
 		shot.append(False)
 		targets.append([i*128,i*72])#sets the initial targets of each asteroid
 		velocity.append([])
+		impact.append(False)
+def Bosskey(event):
+	canvas.create_image(0,0,image=bossimg, anchor="nw")
 #function to play the game once it started
 def Play_Game():
 	canvas.pack()
-	global x,y,direction,buffer,speed,firstshot,score,lives
+	global x,y,direction,buffer,speed,firstshot,score,lives, impact, shot
 	score+=1
 	txt="\nScore:"+str(score)
 	canvas.itemconfigure(scoreText,text=txt)
@@ -149,6 +171,7 @@ def Play_Game():
 		buffer=0
 		firstshot=False
 	canvas.move(player,x,y)
+	canvas.move(hitbox,x,y)
 	#print(x,y)
 	x,y=0,0
 	SetBorders()
@@ -156,7 +179,7 @@ def Play_Game():
 	resetAsteroids()
 	Asteroid_Velocity(buffer,canvas.coords(player),speed)
 	window.after(50,shoot(velocity))#shoots the asteroid after 2 seconds wait
-	# print(shot,velocity,targets)
+	#sets the coordinates of the player
 	with open("lastpos.txt","r") as f:
 		coordskey=f.read()
 	playercoords=""
@@ -168,23 +191,35 @@ def Play_Game():
 		playercoords=Coordinates(player,astronaut_turbo_down.width(),astronaut_turbo_down.height())
 	elif coordskey=="4":
 		playercoords=Coordinates(player,astronaut_turbo_right.width(),astronaut_turbo_right.height())
+	# checks for a collision with all asteroids
 	for i in range(10):
 		asteroidcoords=Coordinates(asteroids[i], asteroid.width(), asteroid.height())
 		if collision(asteroidcoords,playercoords):
-			print("OW!")
-			lives-=1
-			livetxt="\n Lives:"+str(lives)
-			canvas.itemconfigure(livesText,text=livetxt)
-	# spacedustcoords=Coordinates(spacedust,spacedustimg.width(),spacedustimg.height())
-	# if collision(spacedustcoords,playercoords):
-	print(lives)
+			if impact[i]==False:
+				print("OW!")
+				lives-=1
+				livetxt="\n Lives:"+str(lives)
+				canvas.itemconfigure(livesText,text=livetxt)
+				resetAsteroids()
+				impact[i]=True
+	spacedustcoords=Coordinates(spacedust,spacedustimg.width(),spacedustimg.height())
+	invadercoords=Coordinates(invader,spaceship.width(),spaceship.height())
+	#checks for a collision with the invader
+	if collision(invadercoords,playercoords):
+		lives=0
+	#checks for a cllsion with the spacedust
+	if collision(spacedustcoords,playercoords):
+		score+=50
+		MoveSpacedust()
+	#dends the game
 	if lives==0:
 		endgame=True
 		canvas.create_text(width/2,height/2,fill="white",font="Times 20 italic bold", text="Game Over!")
+	#loops the game
 	if 'endgame' not in locals():
 		buffer+=1
 		speed=speed*0.999
-		window.after(90,Play_Game)
+		window.after(100,Play_Game)
 def collision(a,b):
 	if a[0][0]<b[1][0] and a[1][0]>b[0][0] and a[0][1]<b[1][1] and a[1][1]>b[0][1]:
 		return True
@@ -193,8 +228,30 @@ def collision(a,b):
 def Coordinates(o,width,height):
 	size=[]
 	size.append(canvas.coords(o))
-	topleft=canvas.coords(o)
-	size.append([topleft[0]+width,topleft[1]+height])
+	global hitbox
+	if o==player:
+		with open("lastpos.txt","r") as f:
+			lastpos=f.read()
+		if lastpos=="1":
+			size.append([size[0][0]+32,size[0][1]+65])
+			size[0][0]+=8
+		elif lastpos=="2":
+			size.append([size[0][0]+65,size[0][1]+31])
+			size[0][1]+=7
+		elif lastpos=="3":
+			size.append([size[0][0]+31,size[0][1]+height])
+			size[0][0]+=7
+			size[0][1]+=25
+		elif lastpos=="4":
+			size.append([size[0][0]+width,size[0][1]+32])
+			size[0][0]+=25
+			size[0][1]+=8
+		canvas.coords(hitbox,size[0][0],size[0][1],size[1][0],size[1][1])
+	else:
+		size[0][0]+=5
+		size[0][1]+=5
+		size.append([size[0][0]+width-5,size[0][1]+height-5])
+
 	return size
 #Creates the window and canvas
 width = 1280
@@ -213,7 +270,7 @@ spaceship=PhotoImage(file="spaceship_asteroid.png")
 spaceship_beam=PhotoImage(file="spaceship_beam1.png")
 asteroid=PhotoImage(file="asteroid.png")
 spacedustimg=PhotoImage(file="spacedust.png")
-
+bossimg=PhotoImage(file="boss.png")
 
 gamestart=False
 #stores the background image in a local variable and sets the canvas background
@@ -250,24 +307,17 @@ livesText = canvas.create_text( width/10 , 10 , fill="white" , font="Times 20 it
 canvas.bind("<KeyPress>",pressing)
 canvas.bind("<KeyRelease>",released)
 canvas.bind("<Button-1>",click)
+canvas.bind("b",Bosskey)
 canvas.focus_set()
 
-
-menu=Toplevel(window)
-menu.geometry("300x300")
-menu.title("")
-newgame=Button(menu, text="New game")
-newgame.pack()
-scoreboards=Button(menu, text="Scoreboard")
-scoreboards.pack()
-menu.attributes("-topmost",1)
+hitbox=canvas.create_rectangle(canvas.coords(player)[0]+8,canvas.coords(player)[1],canvas.coords(player)[0]+32,canvas.coords(player)[1]+65)
 
 
 
 canvas.pack()
 
 #SetBorders()
-
+PlaceSpacedust()
 CreateAsteroids()
 Play_Game()
 window.mainloop()
