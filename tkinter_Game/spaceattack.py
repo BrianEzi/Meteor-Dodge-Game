@@ -127,15 +127,21 @@ def setWindowDimensions(w,h,t):
 
 	return window
 
+def CreateAsteroids():
+	global asteroids, shot, targets, velocity
+	asteroids=[]
+	shot=[]
+	targets=[]
+	velocity=[]
+	for i in range(10):
+		asteroids.append(canvas.create_image(width/2 -20, + spaceship.height() - 30,image=asteroid,anchor='nw'))
+		shot.append(False)
+		targets.append([i*128,i*72])#sets the initial targets of each asteroid
+		velocity.append([])
 #function to play the game once it started
 def Play_Game():
 	canvas.pack()
-	global x,y
-	global direction
-	global buffer
-	global speed
-	global firstshot
-	global score
+	global x,y,direction,buffer,speed,firstshot,score,lives
 	score+=1
 	txt="\nScore:"+str(score)
 	canvas.itemconfigure(scoreText,text=txt)
@@ -166,13 +172,15 @@ def Play_Game():
 		asteroidcoords=Coordinates(asteroids[i], asteroid.width(), asteroid.height())
 		if collision(asteroidcoords,playercoords):
 			print("OW!")
-
-
-
-
-
-
-
+			lives-=1
+			livetxt="\n Lives:"+str(lives)
+			canvas.itemconfigure(livesText,text=livetxt)
+	# spacedustcoords=Coordinates(spacedust,spacedustimg.width(),spacedustimg.height())
+	# if collision(spacedustcoords,playercoords):
+	print(lives)
+	if lives==0:
+		endgame=True
+		canvas.create_text(width/2,height/2,fill="white",font="Times 20 italic bold", text="Game Over!")
 	if 'endgame' not in locals():
 		buffer+=1
 		speed=speed*0.999
@@ -204,7 +212,7 @@ astronaut_turbo_right=PhotoImage(file="turbo_astronaut_right.png")
 spaceship=PhotoImage(file="spaceship_asteroid.png")
 spaceship_beam=PhotoImage(file="spaceship_beam1.png")
 asteroid=PhotoImage(file="asteroid.png")
-spacedust=PhotoImage(file="spacedust.png")
+spacedustimg=PhotoImage(file="spacedust.png")
 
 
 gamestart=False
@@ -216,19 +224,11 @@ canvas.create_image(0,0,image=background,anchor='nw')
 player=canvas.create_image(100,150,image=astronaut_turbo,anchor='nw')
 
 #creates ten asteroids as well as arrays to store different values relating to each asteroid
-asteroids=[]
-shot=[]
-targets=[]
-velocity=[]
-for i in range(10):
-	asteroids.append(canvas.create_image(width/2 -20, + spaceship.height() - 30,image=asteroid,anchor='nw'))
-	shot.append(False)
-	targets.append([i*128,i*72])
-	velocity.append([])
+
 invader=canvas.create_image(width/2-spaceship.width()/2,0,image=spaceship,anchor='nw')
 with open("lastpos.txt","w") as f:
 	f.write("1")
-canvas.create_image(0,0,image=spacedust,anchor='nw')
+
 
 
 
@@ -241,6 +241,10 @@ firstshot=True
 score=0
 txt="\n Score:"+str(score)
 scoreText = canvas.create_text( width/2 , 10 , fill="white" , font="Times 20 italic bold", text=txt)
+
+lives=5
+livetxt="\n Lives:"+str(lives)
+livesText = canvas.create_text( width/10 , 10 , fill="white" , font="Times 20 italic bold", text=livetxt)
 
 #binds the control for the character
 canvas.bind("<KeyPress>",pressing)
@@ -264,6 +268,7 @@ canvas.pack()
 
 #SetBorders()
 
+CreateAsteroids()
 Play_Game()
 window.mainloop()
 
