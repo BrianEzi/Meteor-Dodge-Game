@@ -1,5 +1,7 @@
 import random 
-from tkinter import *
+import sys
+if "Tkinter" not in sys.modules:
+    from tkinter import *
 #calculates the velocity of the asteroid (speed and direction)
 def Asteroid_Velocity(i,targetpos,speed):
 	global velocity
@@ -55,27 +57,29 @@ def pressing(event):
 def movePlayer(lastkey):
 	global x,y
 	if lastkey!="":
+		print("moveplayer",lastkey)
 		for letter in lastkey:
-			if letter=="w":
+			if letter==up:
 				y-=10
 				canvas.itemconfigure(player,image=astronaut_turbo)
 				with open("lastpos.txt","w") as f:
 					f.write("1")
-			elif letter=="a":
+			elif letter==left:
 				x-=10
 				canvas.itemconfigure(player,image=astronaut_turbo_left)
 				with open("lastpos.txt","w") as f:
 					f.write("2")
-			elif letter=="s":
+			elif letter==down:
 				y+=10
 				canvas.itemconfigure(player,image=astronaut_turbo_down)
 				with open("lastpos.txt","w") as f:
 					f.write("3")
-			elif letter=="d":
+			elif letter==right:
 				x+=10
 				canvas.itemconfigure(player,image=astronaut_turbo_right)
 				with open("lastpos.txt","w") as f:
 					f.write("4")
+			print(letter)
 #checks when a key has been released then removes it from the currently active keys
 def released(event):
 	lastkey=""
@@ -141,7 +145,6 @@ def PlaceSpacedust():
 def MoveSpacedust():
 	global spacedustimg, spacedust, spacedustx,spacedusty
 	canvas.move(spacedust,spacedustx*-1,spacedusty*-1)
-	spacedust = canvas.create_image(0,0,image=spacedustimg,anchor='nw')
 	spacedustx = random.randint(0,width- spacedustimg.width())
 	spacedusty = random.randint(0,height- spacedustimg.height())
 	canvas.move(spacedust, spacedustx, spacedusty)
@@ -179,7 +182,7 @@ def Play_Game():
 	resetAsteroids()
 	Asteroid_Velocity(buffer,canvas.coords(player),speed)
 	window.after(50,shoot(velocity))#shoots the asteroid after 2 seconds wait
-	#sets the coordinates of the player
+	# print(shot,velocity,targets)
 	with open("lastpos.txt","r") as f:
 		coordskey=f.read()
 	playercoords=""
@@ -191,7 +194,6 @@ def Play_Game():
 		playercoords=Coordinates(player,astronaut_turbo_down.width(),astronaut_turbo_down.height())
 	elif coordskey=="4":
 		playercoords=Coordinates(player,astronaut_turbo_right.width(),astronaut_turbo_right.height())
-	# checks for a collision with all asteroids
 	for i in range(10):
 		asteroidcoords=Coordinates(asteroids[i], asteroid.width(), asteroid.height())
 		if collision(asteroidcoords,playercoords):
@@ -204,22 +206,20 @@ def Play_Game():
 				impact[i]=True
 	spacedustcoords=Coordinates(spacedust,spacedustimg.width(),spacedustimg.height())
 	invadercoords=Coordinates(invader,spaceship.width(),spaceship.height())
-	#checks for a collision with the invader
 	if collision(invadercoords,playercoords):
 		lives=0
-	#checks for a cllsion with the spacedust
 	if collision(spacedustcoords,playercoords):
 		score+=50
 		MoveSpacedust()
-	#dends the game
 	if lives==0:
 		endgame=True
-		canvas.create_text(width/2,height/2,fill="white",font="Times 20 italic bold", text="Game Over!")
-	#loops the game
 	if 'endgame' not in locals():
 		buffer+=1
 		speed=speed*0.999
-		window.after(100,Play_Game)
+		window.after(90,Play_Game)
+	else:
+		canvas.create_text(width/2,height/2,fill="white",font="Times 20 italic bold", text="Game Over!")
+		CreateMenu()		
 def collision(a,b):
 	if a[0][0]<b[1][0] and a[1][0]>b[0][0] and a[0][1]<b[1][1] and a[1][1]>b[0][1]:
 		return True
@@ -247,6 +247,11 @@ def Coordinates(o,width,height):
 			size[0][0]+=25
 			size[0][1]+=8
 		canvas.coords(hitbox,size[0][0],size[0][1],size[1][0],size[1][1])
+	elif o==invader:
+		size[0][0]+=30
+		size[0][1]+=0
+		size.append([size[0][0]+width-65,size[0][1]+height-20])
+		canvas.coords(invaderhitbox,size[0][0],size[0][1],size[1][0],size[1][1])
 	else:
 		size[0][0]+=5
 		size[0][1]+=5
@@ -256,7 +261,7 @@ def Coordinates(o,width,height):
 #Creates the window and canvas
 width = 1280
 height =  720
-title="Snake Game"
+title="Astronauts and Asteroids"
 window=setWindowDimensions(width,height,title)
 canvas=Canvas(window, width=width, height=height)
 
@@ -278,7 +283,7 @@ background=PhotoImage(file="GameBackground.png")
 canvas.create_image(0,0,image=background,anchor='nw')
 
 #creates the character as a movign image
-player=canvas.create_image(100,150,image=astronaut_turbo,anchor='nw')
+player=canvas.create_image(100,600,image=astronaut_turbo,anchor='nw')
 
 #creates ten asteroids as well as arrays to store different values relating to each asteroid
 
@@ -286,14 +291,13 @@ invader=canvas.create_image(width/2-spaceship.width()/2,0,image=spaceship,anchor
 with open("lastpos.txt","w") as f:
 	f.write("1")
 
-
-
-
 x,y=0,0
 direction="left"
 buffer=0
 speed=100
 firstshot=True
+
+invaderhitbox=canvas.create_rectangle(canvas.coords(invader)[0],canvas.coords(invader)[1],canvas.coords(invader)[0]+1,canvas.coords(invader)[1]+1)
 
 score=0
 txt="\n Score:"+str(score)
@@ -311,15 +315,161 @@ canvas.bind("b",Bosskey)
 canvas.focus_set()
 
 hitbox=canvas.create_rectangle(canvas.coords(player)[0]+8,canvas.coords(player)[1],canvas.coords(player)[0]+32,canvas.coords(player)[1]+65)
+def Setdefaultcontrols():
+	global up, down, left, right
+	up="w"
+	left="a"
+	right="d"
+	down="s"
+def CreateMenu():
+	global menu, menuw,menuh
+	menu=Toplevel(window)
+	menu.configure(bg="#212121")
+	ws=window.winfo_screenwidth()
+	hs=window.winfo_screenheight()
+	menuw=300
+	menuh=300
+	x =(ws/2) - (menuw/2)
+	y=(hs/2)-(menuh/2)
+	menu.geometry('%dx%d+%d+%d' % (menuw, menuh, x, y)) # window size
+	newgame=Button(menu, text="New game", font=("Arial", 30),command=lambda:Newgame(),bg="#222121", fg = "white")
+	newgame.pack(pady="10")
+	scoreboards=Button(menu, text="Scoreboard", font=("Arial",30),bg="#212121", fg="white", command=lambda:ShowScores())
+	scoreboards.pack(pady="10")
+	controls=Button(menu,text="Controls", font=("Arial",30,), bg="#212121", fg="white", command=lambda:Controls())
+	controls.pack(pady="10")
+	#menu.attributes("-topmost",1)
+	menu.overrideredirect(True)
 
+def Newgame():
+	menu.destroy()
+	Play_Game()
+def ShowScores():
+	#scoreboard=setWindowDimensions(250,250,"Scoreboard")
+	global menuh, menuw
+	scoreboard=Toplevel(menu)
+	ws=window.winfo_screenwidth()
+	hs=window.winfo_screenheight()
+	x =(ws/2) - (menuw/2)
+	y=(hs/2)-(menuh/2)
+	scoreboard.geometry('%dx%d+%d+%d' % (menuw, menuh, x, y)) # window size
+	scoreboard.configure(bg="#212121")
+	with open("scores.txt","r") as f:
+		temp=f.read()
+	print(temp)
+	scores=Label(scoreboard, text=temp)
+	scores.configure(fg="white",bg="#212121")
+	# scores.place(x=50,y=50)
+	scores.pack()
+	backbutton=Button(scoreboard,text="Back", font=("Arial",20), bg="#212121", fg="white", command=lambda:scoreboard.destroy())
+	backbutton.pack(side="bottom")
+	scoreboard.overrideredirect(True)
 
-
+def Controls():
+	global menuh, menuw
+	controls=Toplevel(menu)
+	ws=window.winfo_screenwidth()
+	hs=window.winfo_screenheight()
+	x =(ws/2) - (menuw/2)
+	y=(hs/2)-(menuh/2)
+	controls.geometry('%dx%d+%d+%d' % (menuw, menuh, x, y)) # window size
+	controls.configure(bg="#212121")
+	uplbl=Label(controls,text="UP",fg="white",bg="#212121",font=("Arial",20))
+	uplbl.pack()
+	upentry=Text(controls,height="1",width="5")
+	upentry.pack()
+	leftlbl=Label(controls,text="LEFT",fg="white",bg="#212121",font=("Arial",20))
+	leftlbl.pack()
+	leftentry=Text(controls,height="1",width="5")
+	leftentry.pack()
+	downlbl=Label(controls,text="DOWN",fg="white",bg="#212121",font=("Arial",20))
+	downlbl.pack()
+	downentry=Text(controls,height="1",width="5")
+	downentry.pack()
+	rightlbl=Label(controls,text="RIGHT",fg="white",bg="#212121",font=("Arial",20))
+	rightlbl.pack()
+	rightentry=Text(controls,height="1",width="5")
+	rightentry.pack()
+	upentry.insert("end-1c",up)
+	downentry.insert("end-1c",down)
+	leftentry.insert("end-1c",left)
+	rightentry.insert("end-1c",right)
+	savebutton=Button(controls, text="Save and Return", font=("Arial",20), bg="#212121", fg="white", command=lambda:setcontrols(upentry.get(1.0,"end-1c"),leftentry.get(1.0,"end-1c"),rightentry.get(1.0,"end-1c"),downentry.get(1.0,"end-1c"),controls))
+	savebutton.pack()
+	controls.overrideredirect(True)
+def setcontrols(u,l,r,d,controls): 
+	print(u,l,r,d)
+	global up,down,left,right
+	errorfound=False
+	if len(u)==1:
+		up=u
+	else:
+		errorfound=True
+		error=Toplevel(controls)
+		ws=window.winfo_screenwidth()
+		hs=window.winfo_screenheight()
+		x =(ws/2) - (menuw/4)
+		y=(hs/2)-(menuh/4)
+		error.geometry('%dx%d+%d+%d' % (menuw, menuh/3, x*1.3, y)) # window size
+		error.configure(bg="#212121")
+		errorlbl=Label(error,text="Up Key must be \n only one character",fg="blue",bg="#212121",font=("Arial",20))
+		errorlbl.pack()
+		#error.overrideredirect(True)
+		#window.after(1000,error.destroy())
+	if len(l)==1:
+		left=l
+	else:
+		errorfound=True
+		error=Toplevel(controls)
+		ws=window.winfo_screenwidth()
+		hs=window.winfo_screenheight()
+		x =(ws/2) - (menuw/4)
+		y=(hs/2)-(menuh/4)
+		error.geometry('%dx%d+%d+%d' % (menuw, menuh/3,  x*1.3, y)) # window size
+		error.configure(bg="#212121")
+		errorlbl=Label(error,text="Left Key must be \nonly one character",fg="blue",bg="#212121",font=("Arial",20))
+		errorlbl.pack()
+		#error.overrideredirect(True)
+		#window.after(1000,error.destroy())
+	if len(r)==1:
+		right=r
+	else:
+		errorfound=True
+		error=Toplevel(controls)
+		ws=window.winfo_screenwidth()
+		hs=window.winfo_screenheight()
+		x =(ws/2) - (menuw/4)
+		y=(hs/2)-(menuh/4)
+		error.geometry('%dx%d+%d+%d' % (menuw, menuh/3, x*1.3, y)) # window size
+		error.configure(bg="#212121")
+		errorlbl=Label(error,text="Right Key must be \nonly one character",fg="blue",bg="#212121",font=("Arial",20))
+		errorlbl.pack()
+		#error.overrideredirect(True)
+		#window.after(1000,error.destroy())
+	if len(d)==1:
+		down=d 
+	else:
+		errorfound=True
+		error=Toplevel(controls)
+		ws=window.winfo_screenwidth()
+		hs=window.winfo_screenheight()
+		x =(ws/2) - (menuw/4)
+		y=(hs/2)-(menuh/4)
+		error.geometry('%dx%d+%d+%d' % (menuw, menuh/3, x*1.3, y)) # window size
+		error.configure(bg="#212121")
+		errorlbl=Label(error,text="Down Key must be \nonly one character",fg="blue",bg="#212121",font=("Arial",20))
+		errorlbl.pack()
+		#error.overrideredirect(True)
+		#window.after(1000,error.destroy())
+	if not errorfound:
+		controls.destroy()
 canvas.pack()
 
 #SetBorders()
+Setdefaultcontrols()
+CreateMenu()
 PlaceSpacedust()
 CreateAsteroids()
-Play_Game()
 window.mainloop()
 
 
