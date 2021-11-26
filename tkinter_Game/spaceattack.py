@@ -28,21 +28,28 @@ def shoot(velocity):
 #resets all asteroids back to their original position where they are following the spaceship
 def resetAsteroids():
 	global direction, impact, shot, velocity, asteroids
-	invaderpos=canvas.coords(invader)
+	invaderpos=""
+	if cheat2:
+		invaderpos=canvas.coords(player)
+	else:invaderpos=canvas.coords(invader)
 	for i in range(10):
-		asteroidpos=canvas.coords(asteroids[i])		
-		if shot[i]==False :
-			if direction=="left":
-				canvas.move(asteroids[i],-10,0)
-			else:
-				canvas.move(asteroids[i],10,0)
+		asteroidpos=canvas.coords(asteroids[i])	
+		if not cheat2:	
+			if shot[i]==False :
+				if direction=="left":
+					canvas.move(asteroids[i],-10,0)
+				else:
+					canvas.move(asteroids[i],10,0)
+		else:
+			if shot[i]==False :
+				canvas.coords(player,canvas.coords(player)[0]+spaceship.width() -20,canvas.coords(player)[1]+ spaceship.height() - 30)
+		if impact[i]==True:
+			canvas.move(player,4*velocity[i][0], 4*velocity[i][1])
+			canvas.move(asteroids[i],-10*velocity[i][0],-10*velocity[i][1])
 		if asteroidpos[0]+50<0 or asteroidpos[0]>width or asteroidpos[1]+50> height or  asteroidpos[1]< 0:
 			window.after(50,canvas.move(asteroids[i],invaderpos[0]+spaceship.width()/2-asteroidpos[0],spaceship.height()-30 - asteroidpos[1]))
 			shot[i]=False
 			impact[i]=False
-		if impact[i]==True:
-			canvas.move(player,5*velocity[i][0], 5*velocity[i][1])
-			canvas.move(asteroids[i],-10*velocity[i][0],-10*velocity[i][1])
 #checks which keys are currently being pressed then adjusts the characters direction accordingly
 #active keys are stored in external file called prevkey.txt
 def pressing(event):
@@ -57,7 +64,6 @@ def pressing(event):
 def movePlayer(lastkey):
 	global x,y
 	if lastkey!="":
-		print("moveplayer",lastkey)
 		for letter in lastkey:
 			if letter==up:
 				y-=10
@@ -79,7 +85,6 @@ def movePlayer(lastkey):
 				canvas.itemconfigure(player,image=astronaut_turbo_right)
 				with open("lastpos.txt","w") as f:
 					f.write("4")
-			print(letter)
 #checks when a key has been released then removes it from the currently active keys
 def released(event):
 	lastkey=""
@@ -87,7 +92,6 @@ def released(event):
 		lastkey=f.read()
 	for letter in lastkey:
 		if event.keysym==letter:
-			print(event.keysym)
 			lastkey=lastkey.replace(event.keysym,"")
 	with open("prevkey.txt","w") as f:
 		f.write(lastkey)
@@ -95,13 +99,13 @@ def released(event):
 #prevents the player from moving off screen 
 def SetBorders():
 	position=(canvas.coords(player))
-	if position[0]<0:
+	if position[0]+20<0:
 		canvas.coords(player,0,position[1])
-	elif position[0]+90>width:
-		canvas.coords(player,width-90,position[1])
-	elif position[1]+90 > height:
-		canvas.coords(player,position[0], height-90)
-	elif position[1] < 0:
+	elif position[0]+70>width:
+		canvas.coords(player,width-60,position[1])
+	elif position[1]+70 > height:
+		canvas.coords(player,position[0], height-60)
+	elif position[1]+20 < 0:
 		canvas.coords(player,position[0],0)
 	position.clear()
 
@@ -156,33 +160,132 @@ def CreateAsteroids():
 	velocity=[]
 	impact=[]
 	for i in range(10):
-		asteroids.append(canvas.create_image(width/2 -20, + spaceship.height() - 30,image=asteroid,anchor='nw'))
+		asteroids.append(canvas.create_image(width/2 -20, spaceship.height() - 30,image=asteroid,anchor='nw'))
 		shot.append(False)
 		targets.append([i*128,i*72])#sets the initial targets of each asteroid
 		velocity.append([])
 		impact.append(False)
+	canvas.pack()
 def Bosskey(event):
 	canvas.create_image(0,0,image=bossimg, anchor="nw")
 #function to play the game once it started
 def Play_Game():
-	canvas.pack()
-	global x,y,direction,buffer,speed,firstshot,score,lives, impact, shot
-	score+=1
-	txt="\nScore:"+str(score)
-	canvas.itemconfigure(scoreText,text=txt)
-	if buffer==10:
-		buffer=0
-		firstshot=False
-	canvas.move(player,x,y)
-	canvas.move(hitbox,x,y)
-	#print(x,y)
-	x,y=0,0
-	SetBorders()
-	moveSpaceship()
-	resetAsteroids()
-	Asteroid_Velocity(buffer,canvas.coords(player),speed)
-	window.after(50,shoot(velocity))#shoots the asteroid after 2 seconds wait
-	# print(shot,velocity,targets)
+	global x,y,direction,buffer,speed,firstshot,score,lives, impact, shot, pausetext
+	global gameovertext
+	if paused==False:
+		canvas.itemconfigure(pausetext,text="")
+		canvas.pack()
+		score+=1
+		txt="\nScore:"+str(score)
+		canvas.itemconfigure(scoreText,text=txt)
+		if buffer==10:
+			buffer=0
+			firstshot=False
+		canvas.move(player,x,y)
+		canvas.move(hitbox,x,y)
+		#print(x,y)
+		x,y=0,0
+		SetBorders()
+		moveSpaceship()
+		resetAsteroids()
+		Asteroid_Velocity(buffer,canvas.coords(player),speed)
+		shoot(velocity)
+		playercoords=GetPlayerCoords()
+		for i in range(10):
+			asteroidcoords=Coordinates(asteroids[i], asteroid.width(), asteroid.height())
+			if collision(asteroidcoords,playercoords):
+				if impact[i]==False:
+					print("OW!")
+					lives-=1
+					livetxt="\n Lives:"+str(lives)
+					canvas.itemconfigure(livesText,text=livetxt)
+					resetAsteroids()
+					impact[i]=True
+		spacedustcoords=Coordinates(spacedust,spacedustimg.width(),spacedustimg.height())
+		invadercoords=Coordinates(invader,spaceship.width(),spaceship.height())
+		if collision(invadercoords,playercoords):
+			lives=0
+			livetxt="\n Lives:"+str(lives)
+			canvas.itemconfigure(livesText,text=livetxt)
+		if collision(spacedustcoords,playercoords):
+			score+=50
+			MoveSpacedust()
+		if lives==0:
+			endgame=True 
+	else:
+		canvas.itemconfigure(pausetext,text="Game Paused")
+	if 'endgame' not in locals():
+		if not paused:
+			buffer+=1
+			speed=speed*0.999
+		window.after(90,Play_Game)
+	else:
+		canvas.itemconfigure(gameovertext,text="Game Over!")
+		Score_window=Toplevel(window)
+		Score_window.configure(bg="#212121")
+		ws=window.winfo_screenwidth()
+		hs=window.winfo_screenheight()
+		w=300
+		h=300
+		x =(ws/2) - (w/2)
+		y=(hs/2)-(h/2)
+		Score_window.geometry('%dx%d+%d+%d' % (w, h, x, y)) # window size
+		namelbl=Label(Score_window,text="Name",fg="white",bg="#212121",font=("Arial",20))
+		nameentry=Text(Score_window,height="1",width="5")
+		namelbl.pack()
+		nameentry.pack()
+		scorelbl=Label(Score_window,text="Score",fg="white",bg="#212121",font=("Arial",20))
+		scorelbl.pack()
+		savescore=Button(Score_window,text="Save",bg="#212121",fg="white",font=("Arial",20),command=lambda:SaveScores(nameentry,Score_window))
+		savescore.pack()
+		Score_window.overrideredirect(True)
+		CreateMenu()
+def SaveScores(nameentry,Score_window):
+	text=""
+	if ":" in nameentry.get("1.0","end-1c"):
+			text=nameentry.get("1.0","end-1c").replace(":","")
+			nameentry.delete(0,END)
+			nameentry.insert(0,text)
+	else:text=nameentry.get("1.0","end-1c")
+	with open("scores.txt","a") as f:
+		f.write("\n"+text+":"+str(score))
+	Score_window.destroy()
+def CheckforHighScore(score):
+	highscore=TopTenScores()[0][1]
+	print(highscore)
+	if score>highscore:
+		return True
+#reads the score file and calculates the top ten scores
+def TopTenScores():
+	with open("scores.txt","r") as f:
+		temp=f.read()
+	scoreboard=temp.split("\n")
+	highscores=[0]*10
+	print(highscores)
+	names=[]
+	k=0
+	for score in scoreboard:
+		currentscore=score.split(":")
+		l=list(highscores)
+		names.append(currentscore[0])
+		k+=1
+		for i in range(10):
+			if int(currentscore[1])>=int(highscores[i]):
+				highscores[i]=int(currentscore[1])
+				for j in range(i+1,10):
+					highscores[j]=int(l[j-1])
+				break
+	fullscoreboard=[]
+	for i in range(len(names)):
+		fullscoreboard.append([names[i],highscores[i]])
+	print(fullscoreboard)
+	return fullscoreboard
+def collision(a,b):
+	if a[0][0]<b[1][0] and a[1][0]>b[0][0] and a[0][1]<b[1][1] and a[1][1]>b[0][1]:
+		return True
+	return False
+
+def GetPlayerCoords():
 	with open("lastpos.txt","r") as f:
 		coordskey=f.read()
 	playercoords=""
@@ -194,37 +297,7 @@ def Play_Game():
 		playercoords=Coordinates(player,astronaut_turbo_down.width(),astronaut_turbo_down.height())
 	elif coordskey=="4":
 		playercoords=Coordinates(player,astronaut_turbo_right.width(),astronaut_turbo_right.height())
-	for i in range(10):
-		asteroidcoords=Coordinates(asteroids[i], asteroid.width(), asteroid.height())
-		if collision(asteroidcoords,playercoords):
-			if impact[i]==False:
-				print("OW!")
-				lives-=1
-				livetxt="\n Lives:"+str(lives)
-				canvas.itemconfigure(livesText,text=livetxt)
-				resetAsteroids()
-				impact[i]=True
-	spacedustcoords=Coordinates(spacedust,spacedustimg.width(),spacedustimg.height())
-	invadercoords=Coordinates(invader,spaceship.width(),spaceship.height())
-	if collision(invadercoords,playercoords):
-		lives=0
-	if collision(spacedustcoords,playercoords):
-		score+=50
-		MoveSpacedust()
-	if lives==0:
-		endgame=True
-	if 'endgame' not in locals():
-		buffer+=1
-		speed=speed*0.999
-		window.after(90,Play_Game)
-	else:
-		canvas.create_text(width/2,height/2,fill="white",font="Times 20 italic bold", text="Game Over!")
-		CreateMenu()		
-def collision(a,b):
-	if a[0][0]<b[1][0] and a[1][0]>b[0][0] and a[0][1]<b[1][1] and a[1][1]>b[0][1]:
-		return True
-	return False
-
+	return playercoords
 def Coordinates(o,width,height):
 	size=[]
 	size.append(canvas.coords(o))
@@ -284,18 +357,11 @@ canvas.create_image(0,0,image=background,anchor='nw')
 
 #creates the character as a movign image
 player=canvas.create_image(100,600,image=astronaut_turbo,anchor='nw')
-
-#creates ten asteroids as well as arrays to store different values relating to each asteroid
-
+CreateAsteroids()
 invader=canvas.create_image(width/2-spaceship.width()/2,0,image=spaceship,anchor='nw')
 with open("lastpos.txt","w") as f:
 	f.write("1")
 
-x,y=0,0
-direction="left"
-buffer=0
-speed=100
-firstshot=True
 
 invaderhitbox=canvas.create_rectangle(canvas.coords(invader)[0],canvas.coords(invader)[1],canvas.coords(invader)[0]+1,canvas.coords(invader)[1]+1)
 
@@ -307,13 +373,48 @@ lives=5
 livetxt="\n Lives:"+str(lives)
 livesText = canvas.create_text( width/10 , 10 , fill="white" , font="Times 20 italic bold", text=livetxt)
 
+gameovertext=canvas.create_text(width/2,height/2,fill="white",font="Times 20 italic bold", text="")
+pausetext=canvas.create_text(width/2,height/2,fill="white",font="Times 20 italic bold", text="")
+paused=False
+def Pause(event):
+	global paused
+	if paused:
+		paused=False
+	else:
+		paused=True
+def cheatcode1(event):
+	global lives 
+	lives+=1
+	livetxt="\n Lives:"+str(lives)
+	canvas.itemconfigure(livesText, text=livetxt)
+cheat2=False
+def cheatcode2(event):
+	# global cheat2
+	# cheat2=True
+	# playercoords=GetPlayerCoords()
+	# invadercoords=Coordinates(invader,spaceship.width(),spaceship.height())
+	# canvas.itemconfigure(invader,image=spaceship_beam)
+	# while not collision(invadercoords,playercoords):
+	# 	speed=20
+	# 	distance_x= invadercoords[0][0]-playercoords[0][0]
+	# 	distance_y= invadercoords[1][1]-playercoords[0][1]
+	# 	speed_x=distance_x/speed
+	# 	speed_y=distance_y/speed
+	# 	playercoords=GetPlayerCoords()
+	# 	invadercoords=Coordinates(invader,spaceship.width(),spaceship.height())
+	# 	canvas.move(player,speed_x,speed_y)
+	# else:
+	# 	invader.destroy()
+	# 	canvas.itemconfigure(player,image=spaceship)
 #binds the control for the character
 canvas.bind("<KeyPress>",pressing)
 canvas.bind("<KeyRelease>",released)
 canvas.bind("<Button-1>",click)
 canvas.bind("b",Bosskey)
+canvas.bind("<space>",Pause)
+canvas.bind("+", cheatcode1)
+canvas.bind("^", cheatcode2)
 canvas.focus_set()
-
 hitbox=canvas.create_rectangle(canvas.coords(player)[0]+8,canvas.coords(player)[1],canvas.coords(player)[0]+32,canvas.coords(player)[1]+65)
 def Setdefaultcontrols():
 	global up, down, left, right
@@ -343,7 +444,30 @@ def CreateMenu():
 
 def Newgame():
 	menu.destroy()
+	ResetGame()
 	Play_Game()
+
+#destroys the asteroids, resets the position of the player and spaceship and resets all variables to their original values
+def ResetGame():
+	global x,y,direction,buffer,speed,firstshot,asteroids, score, lives,gameovertext
+	x,y=0,0
+	direction="left"
+	buffer=0
+	speed=100
+	firstshot=True
+	for i in range(10):
+		if asteroids[i]!="":
+			canvas.delete(asteroids[i])
+	CreateAsteroids()
+	canvas.coords(invader,width/2-spaceship.width()/2,0)
+	canvas.coords(player,100,600)
+	score=0
+	txt="\nScore:"+str(score)
+	canvas.itemconfigure(scoreText,text=txt)
+	lives=5
+	livetxt="\n Lives:"+str(lives)
+	canvas.itemconfigure(livesText,text=livetxt)
+	canvas.itemconfigure(gameovertext,text="")
 def ShowScores():
 	#scoreboard=setWindowDimensions(250,250,"Scoreboard")
 	global menuh, menuw
@@ -354,10 +478,11 @@ def ShowScores():
 	y=(hs/2)-(menuh/2)
 	scoreboard.geometry('%dx%d+%d+%d' % (menuw, menuh, x, y)) # window size
 	scoreboard.configure(bg="#212121")
-	with open("scores.txt","r") as f:
-		temp=f.read()
-	print(temp)
-	scores=Label(scoreboard, text=temp)
+	topscores=TopTenScores()
+	scorestext=""
+	for i in range(len(topscores)):
+		scorestext+=("\n"+ str(i+1)+". "+topscores[i][0]+":"+str(topscores[i][1]))
+	scores=Label(scoreboard, text=scorestext)
 	scores.configure(fg="white",bg="#212121")
 	# scores.place(x=50,y=50)
 	scores.pack()
@@ -400,76 +525,81 @@ def Controls():
 def setcontrols(u,l,r,d,controls): 
 	print(u,l,r,d)
 	global up,down,left,right
+	u=u.lower()
+	l=l.lower()
+	r=r.lower()
+	d=d.lower()
 	errorfound=False
-	if len(u)==1:
+	if len(u)==1 and u!="b" and u!=" " and u!=l and u!=r and u!=d:
 		up=u
+	elif  u=="b" or u==" " or u==l or u==r or u==d:
+		errorfound=True
+		text="Up:\nThis key is already assigned"
+		ControlsAuthentication(controls,text)
 	else:
 		errorfound=True
-		error=Toplevel(controls)
-		ws=window.winfo_screenwidth()
-		hs=window.winfo_screenheight()
-		x =(ws/2) - (menuw/4)
-		y=(hs/2)-(menuh/4)
-		error.geometry('%dx%d+%d+%d' % (menuw, menuh/3, x*1.3, y)) # window size
-		error.configure(bg="#212121")
-		errorlbl=Label(error,text="Up Key must be \n only one character",fg="blue",bg="#212121",font=("Arial",20))
-		errorlbl.pack()
-		#error.overrideredirect(True)
-		#window.after(1000,error.destroy())
-	if len(l)==1:
+		text="Up Key must be \n only one character"
+		ControlsAuthentication(controls,text)
+	if len(l)==1 and l!="b" and l!=" " and l!=u and l!=r and l!=d :
 		left=l
+	elif l=="b" or u==" " or l==u or l==r or l==d:
+		errorfound=True
+		text="Left:\nThis key is already assigned"
+		ControlsAuthentication(controls,text)
 	else:
 		errorfound=True
-		error=Toplevel(controls)
-		ws=window.winfo_screenwidth()
-		hs=window.winfo_screenheight()
-		x =(ws/2) - (menuw/4)
-		y=(hs/2)-(menuh/4)
-		error.geometry('%dx%d+%d+%d' % (menuw, menuh/3,  x*1.3, y)) # window size
-		error.configure(bg="#212121")
-		errorlbl=Label(error,text="Left Key must be \nonly one character",fg="blue",bg="#212121",font=("Arial",20))
-		errorlbl.pack()
-		#error.overrideredirect(True)
-		#window.after(1000,error.destroy())
-	if len(r)==1:
+		text="Left Key must be \nonly one character"
+		ControlsAuthentication(controls,text)
+	if len(r)==1 and r!="b" and r!=" " and r!=u and r!=l and r!=d:
 		right=r
+	elif r==" ":
+		errorfound=True
+		text="Right:\nNo key has been assigned"
+		ControlsAuthentication(controls,text)
+	elif r=="b"  or r==u or r==l or r==d:
+		errorfound=True
+		text="Right: \nThis key is already assigned"
+		ControlsAuthentication(controls,text)
 	else:
 		errorfound=True
-		error=Toplevel(controls)
-		ws=window.winfo_screenwidth()
-		hs=window.winfo_screenheight()
-		x =(ws/2) - (menuw/4)
-		y=(hs/2)-(menuh/4)
-		error.geometry('%dx%d+%d+%d' % (menuw, menuh/3, x*1.3, y)) # window size
-		error.configure(bg="#212121")
-		errorlbl=Label(error,text="Right Key must be \nonly one character",fg="blue",bg="#212121",font=("Arial",20))
-		errorlbl.pack()
-		#error.overrideredirect(True)
-		#window.after(1000,error.destroy())
-	if len(d)==1:
+		text="Right Key must be \nonly one character"
+		ControlsAuthentication(controls,text)
+	if len(d)==1 and d!="b" and d!=" " and d!=u and d!=l and d!=r:
 		down=d 
+	elif d=="":
+		errorfound=True
+		text="Down: \nThis key is already assigned"
+		ControlsAuthentication(controls,text)
+	elif d=="b" or d==" " or d==u or d==l or d==r:
+		errorfound=True
+		text="Down: \nThis key is already assigned"
+		ControlsAuthentication(controls,text)
 	else:
 		errorfound=True
-		error=Toplevel(controls)
-		ws=window.winfo_screenwidth()
-		hs=window.winfo_screenheight()
-		x =(ws/2) - (menuw/4)
-		y=(hs/2)-(menuh/4)
-		error.geometry('%dx%d+%d+%d' % (menuw, menuh/3, x*1.3, y)) # window size
-		error.configure(bg="#212121")
-		errorlbl=Label(error,text="Down Key must be \nonly one character",fg="blue",bg="#212121",font=("Arial",20))
-		errorlbl.pack()
-		#error.overrideredirect(True)
-		#window.after(1000,error.destroy())
+		text="Down Key must be \nonly one character"
+		ControlsAuthentication(controls,text)
 	if not errorfound:
 		controls.destroy()
+
+def ControlsAuthentication(controls,text):
+	global menuw, menuh
+	error=Toplevel(controls)
+	ws=window.winfo_screenwidth()
+	hs=window.winfo_screenheight()
+	x =(ws/2) - (menuw/4)
+	y=(hs/2)-(menuh/4)
+	error.geometry('%dx%d+%d+%d' % (menuw+40, menuh/3, x*1.3, y)) # window size
+	error.configure(bg="#212121")
+	errorlbl=Label(error,text=text,fg="blue",bg="#212121",font=("Arial",20))
+	errorlbl.pack()
+
 canvas.pack()
 
 #SetBorders()
+PlaceSpacedust()
+TopTenScores()
 Setdefaultcontrols()
 CreateMenu()
-PlaceSpacedust()
-CreateAsteroids()
 window.mainloop()
 
 
