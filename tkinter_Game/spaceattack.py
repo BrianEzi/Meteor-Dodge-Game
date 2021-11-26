@@ -28,21 +28,14 @@ def shoot(velocity):
 #resets all asteroids back to their original position where they are following the spaceship
 def resetAsteroids():
 	global direction, impact, shot, velocity, asteroids
-	invaderpos=""
-	if cheat2:
-		invaderpos=canvas.coords(player)
-	else:invaderpos=canvas.coords(invader)
+	invaderpos=canvas.coords(invader)
 	for i in range(10):
-		asteroidpos=canvas.coords(asteroids[i])	
-		if not cheat2:	
-			if shot[i]==False :
-				if direction=="left":
-					canvas.move(asteroids[i],-10,0)
-				else:
-					canvas.move(asteroids[i],10,0)
-		else:
-			if shot[i]==False :
-				canvas.coords(player,canvas.coords(player)[0]+spaceship.width() -20,canvas.coords(player)[1]+ spaceship.height() - 30)
+		asteroidpos=canvas.coords(asteroids[i])		
+		if shot[i]==False :
+			if direction=="left":
+				canvas.move(asteroids[i],-10,0)
+			else:
+				canvas.move(asteroids[i],10,0)
 		if impact[i]==True:
 			canvas.move(player,4*velocity[i][0], 4*velocity[i][1])
 			canvas.move(asteroids[i],-10*velocity[i][0],-10*velocity[i][1])
@@ -160,7 +153,7 @@ def CreateAsteroids():
 	velocity=[]
 	impact=[]
 	for i in range(10):
-		asteroids.append(canvas.create_image(width/2 -20, spaceship.height() - 30,image=asteroid,anchor='nw'))
+		asteroids.append(canvas.create_image(width/2 -20, + spaceship.height() - 30,image=asteroid,anchor='nw'))
 		shot.append(False)
 		targets.append([i*128,i*72])#sets the initial targets of each asteroid
 		velocity.append([])
@@ -182,15 +175,25 @@ def Play_Game():
 			buffer=0
 			firstshot=False
 		canvas.move(player,x,y)
-		canvas.move(hitbox,x,y)
 		#print(x,y)
 		x,y=0,0
 		SetBorders()
 		moveSpaceship()
 		resetAsteroids()
 		Asteroid_Velocity(buffer,canvas.coords(player),speed)
-		shoot(velocity)
-		playercoords=GetPlayerCoords()
+		window.after(50,shoot(velocity))#shoots the asteroid after 2 seconds wait
+		# print(shot,velocity,targets)
+		with open("lastpos.txt","r") as f:
+			coordskey=f.read()
+		playercoords=""
+		if coordskey=="1":
+			playercoords=Coordinates(player,astronaut_turbo.width(),astronaut_turbo.height())
+		elif coordskey=="2":
+			playercoords=Coordinates(player,astronaut_turbo_left.width(),astronaut_turbo_left.height())
+		elif coordskey=="3":
+			playercoords=Coordinates(player,astronaut_turbo_down.width(),astronaut_turbo_down.height())
+		elif coordskey=="4":
+			playercoords=Coordinates(player,astronaut_turbo_right.width(),astronaut_turbo_right.height())
 		for i in range(10):
 			asteroidcoords=Coordinates(asteroids[i], asteroid.width(), asteroid.height())
 			if collision(asteroidcoords,playercoords):
@@ -262,6 +265,19 @@ def TopTenScores():
 	scoreboard=temp.split("\n")
 	highscores=[0]*10
 	print(highscores)
+def GetPlayerCoords():
+	with open("lastpos.txt","r") as f:
+		coordskey=f.read()
+	playercoords=""
+	if coordskey=="1":
+		playercoords=Coordinates(player,astronaut_turbo.width(),astronaut_turbo.height())
+	elif coordskey=="2":
+		playercoords=Coordinates(player,astronaut_turbo_left.width(),astronaut_turbo_left.height())
+	elif coordskey=="3":
+		playercoords=Coordinates(player,astronaut_turbo_down.width(),astronaut_turbo_down.height())
+	elif coordskey=="4":
+		playercoords=Coordinates(player,astronaut_turbo_right.width(),astronaut_turbo_right.height())
+	return playercoords
 	names=[]
 	k=0
 	for score in scoreboard:
@@ -285,23 +301,9 @@ def collision(a,b):
 		return True
 	return False
 
-def GetPlayerCoords():
-	with open("lastpos.txt","r") as f:
-		coordskey=f.read()
-	playercoords=""
-	if coordskey=="1":
-		playercoords=Coordinates(player,astronaut_turbo.width(),astronaut_turbo.height())
-	elif coordskey=="2":
-		playercoords=Coordinates(player,astronaut_turbo_left.width(),astronaut_turbo_left.height())
-	elif coordskey=="3":
-		playercoords=Coordinates(player,astronaut_turbo_down.width(),astronaut_turbo_down.height())
-	elif coordskey=="4":
-		playercoords=Coordinates(player,astronaut_turbo_right.width(),astronaut_turbo_right.height())
-	return playercoords
 def Coordinates(o,width,height):
 	size=[]
 	size.append(canvas.coords(o))
-	global hitbox
 	if o==player:
 		with open("lastpos.txt","r") as f:
 			lastpos=f.read()
@@ -319,12 +321,10 @@ def Coordinates(o,width,height):
 			size.append([size[0][0]+width,size[0][1]+32])
 			size[0][0]+=25
 			size[0][1]+=8
-		canvas.coords(hitbox,size[0][0],size[0][1],size[1][0],size[1][1])
 	elif o==invader:
 		size[0][0]+=30
 		size[0][1]+=0
 		size.append([size[0][0]+width-65,size[0][1]+height-20])
-		canvas.coords(invaderhitbox,size[0][0],size[0][1],size[1][0],size[1][1])
 	else:
 		size[0][0]+=5
 		size[0][1]+=5
@@ -357,13 +357,13 @@ canvas.create_image(0,0,image=background,anchor='nw')
 
 #creates the character as a movign image
 player=canvas.create_image(100,600,image=astronaut_turbo,anchor='nw')
-CreateAsteroids()
+
+#creates ten asteroids as well as arrays to store different values relating to each asteroid
+
 invader=canvas.create_image(width/2-spaceship.width()/2,0,image=spaceship,anchor='nw')
 with open("lastpos.txt","w") as f:
 	f.write("1")
 
-
-invaderhitbox=canvas.create_rectangle(canvas.coords(invader)[0],canvas.coords(invader)[1],canvas.coords(invader)[0]+1,canvas.coords(invader)[1]+1)
 
 score=0
 txt="\n Score:"+str(score)
@@ -376,36 +376,60 @@ livesText = canvas.create_text( width/10 , 10 , fill="white" , font="Times 20 it
 gameovertext=canvas.create_text(width/2,height/2,fill="white",font="Times 20 italic bold", text="")
 pausetext=canvas.create_text(width/2,height/2,fill="white",font="Times 20 italic bold", text="")
 paused=False
+save_button=Button(canvas,text="Save Game",width="10",height="1",command=lambda:SaveGame())
+save_button.place(x=1280,y=0)
 def Pause(event):
 	global paused
 	if paused:
 		paused=False
 	else:
 		paused=True
+		global Savebutton
+		save_button.place(x=600,y=400)
+def SaveGame():
+	Score_window=Toplevel(window)
+	Score_window.configure(bg="#212121")
+	ws=window.winfo_screenwidth()
+	hs=window.winfo_screenheight()
+	w=300
+	h=300
+	x =(ws/2) - (w/2)
+	y=(hs/2)-(h/2)
+	Score_window.geometry('%dx%d+%d+%d' % (w, h, x, y)) # window size
+	namelbl=Label(Score_window,text="Name",fg="white",bg="#212121",font=("Arial",20))
+	nameentry=Text(Score_window,height="1",width="5")
+	namelbl.pack()
+	nameentry.pack()
+	scorelbl=Label(Score_window,text="Score: "+str(score),fg="white",bg="#212121",font=("Arial",20))
+	liveslbl=Label(Score_window,text="Lives: "+str(lives),fg="white",bg="#212121",font=("Arial",20))
+	scorelbl.pack()
+	liveslbl.pack()
+	savescore=Button(Score_window,text="Save",bg="#212121",fg="white",font=("Arial",20),command=lambda:SaveGametoFile(nameentry,Score_window))
+	savescore.pack()
+	Score_window.overrideredirect(True)
+def SaveGametoFile(nameentry,Score_window):
+	global Savebutton
+	text=""
+	if ":" in nameentry.get("1.0","end-1c"):
+			text=nameentry.get("1.0","end-1c").replace(":","")
+			nameentry.delete(0,END)
+			nameentry.insert(0,text)
+	else:text=nameentry.get("1.0","end-1c")
+	with open("saves.txt","a") as f:
+		f.write("\n"+text+"|"+str(lives)+"|"+str(score))
+	Score_window.destroy()
+	save_dbutton.place(x=1280,y=0)
+	ResetGame()
+	CreateMenu()
+#
 def cheatcode1(event):
 	global lives 
 	lives+=1
 	livetxt="\n Lives:"+str(lives)
 	canvas.itemconfigure(livesText, text=livetxt)
-cheat2=False
+#changes the user into another spaceship and 
 def cheatcode2(event):
-	# global cheat2
-	# cheat2=True
-	# playercoords=GetPlayerCoords()
-	# invadercoords=Coordinates(invader,spaceship.width(),spaceship.height())
-	# canvas.itemconfigure(invader,image=spaceship_beam)
-	# while not collision(invadercoords,playercoords):
-	# 	speed=20
-	# 	distance_x= invadercoords[0][0]-playercoords[0][0]
-	# 	distance_y= invadercoords[1][1]-playercoords[0][1]
-	# 	speed_x=distance_x/speed
-	# 	speed_y=distance_y/speed
-	# 	playercoords=GetPlayerCoords()
-	# 	invadercoords=Coordinates(invader,spaceship.width(),spaceship.height())
-	# 	canvas.move(player,speed_x,speed_y)
-	# else:
-	# 	invader.destroy()
-	# 	canvas.itemconfigure(player,image=spaceship)
+	canvas.itemconfigure(invader,image=spaceship_beam)
 #binds the control for the character
 canvas.bind("<KeyPress>",pressing)
 canvas.bind("<KeyRelease>",released)
@@ -415,13 +439,13 @@ canvas.bind("<space>",Pause)
 canvas.bind("+", cheatcode1)
 canvas.bind("^", cheatcode2)
 canvas.focus_set()
-hitbox=canvas.create_rectangle(canvas.coords(player)[0]+8,canvas.coords(player)[1],canvas.coords(player)[0]+32,canvas.coords(player)[1]+65)
 def Setdefaultcontrols():
 	global up, down, left, right
 	up="w"
 	left="a"
 	right="d"
 	down="s"
+#creates the main menu seen when the game is loaded
 def CreateMenu():
 	global menu, menuw,menuh
 	menu=Toplevel(window)
@@ -434,27 +458,73 @@ def CreateMenu():
 	y=(hs/2)-(menuh/2)
 	menu.geometry('%dx%d+%d+%d' % (menuw, menuh, x, y)) # window size
 	newgame=Button(menu, text="New game", font=("Arial", 30),command=lambda:Newgame(),bg="#222121", fg = "white")
-	newgame.pack(pady="10")
+	newgame.pack(pady="0")
 	scoreboards=Button(menu, text="Scoreboard", font=("Arial",30),bg="#212121", fg="white", command=lambda:ShowScores())
-	scoreboards.pack(pady="10")
+	scoreboards.pack(pady="0")
 	controls=Button(menu,text="Controls", font=("Arial",30,), bg="#212121", fg="white", command=lambda:Controls())
-	controls.pack(pady="10")
+	controls.pack(pady="0")
+	loadgame=Button(menu,text="Load", font=("Arial",30,), bg="#212121", fg="white", command=lambda:LoadGame())
+	loadgame.pack(pady="0")
 	#menu.attributes("-topmost",1)
 	menu.overrideredirect(True)
-
+#loads a previous game
+def LoadGame():
+	global menuh, menuw, saves
+	savedgames=Toplevel(menu)
+	ws=window.winfo_screenwidth()
+	hs=window.winfo_screenheight()
+	x =(ws/2) - (menuw/2)
+	y=(hs/2)-(menuh/2)
+	savedgames.geometry('%dx%d+%d+%d' % (menuw, menuh, x, y)) # window size
+	savedgames.configure(bg="#212121")
+	with open("saves.txt","r") as f:
+		temp=f.read()
+	saves=temp.split("\n")
+	score=[]
+	lives=[]
+	names=[]
+	for i in range(len(saves)):
+		currentsave = saves[i].split("|")
+		score.append(currentsave[2])
+		lives.append(currentsave[1])
+		names.append(currentsave[0])
+	variable = StringVar(savedgames)
+	variable.set(saves[0])
+	w= OptionMenu(savedgames, variable, *saves)
+	w.pack()
+	button = Button(savedgames, text="Select save", command=lambda:Checktext(variable.get(),lives,score))
+	button.pack()
+	backbutton=Button(savedgames,text="back", command=lambda:savedgames.destroy())
+	backbutton.pack()
+	savedgames.overrideredirect(True)
+#starts a new game
 def Newgame():
 	menu.destroy()
 	ResetGame()
 	Play_Game()
-
+#finds the correct save that corresponds to the selected save and updates the lives and score
+def Checktext(selected,l,s):
+	global saves, lives, score
+	ResetGame()
+	print(l)
+	for i in range(len(saves)):
+		if saves[i]==selected:
+			lives=int(l[i]) 
+			score=int(s[i]) 
+			livetxt="\n Lives:"+str(lives)
+			canvas.itemconfigure(livesText, text=livetxt)
+			break
+	menu.destroy()
+	Play_Game()
 #destroys the asteroids, resets the position of the player and spaceship and resets all variables to their original values
 def ResetGame():
-	global x,y,direction,buffer,speed,firstshot,asteroids, score, lives,gameovertext
+	global x,y,direction,buffer,speed,firstshot,asteroids, score, lives,gameovertext,paused
 	x,y=0,0
 	direction="left"
 	buffer=0
 	speed=100
 	firstshot=True
+	paused=False
 	for i in range(10):
 		if asteroids[i]!="":
 			canvas.delete(asteroids[i])
@@ -468,6 +538,7 @@ def ResetGame():
 	livetxt="\n Lives:"+str(lives)
 	canvas.itemconfigure(livesText,text=livetxt)
 	canvas.itemconfigure(gameovertext,text="")
+#creates the page for showing scores and displays them in order
 def ShowScores():
 	#scoreboard=setWindowDimensions(250,250,"Scoreboard")
 	global menuh, menuw
@@ -490,6 +561,7 @@ def ShowScores():
 	backbutton.pack(side="bottom")
 	scoreboard.overrideredirect(True)
 
+#creates the controls page
 def Controls():
 	global menuh, menuw
 	controls=Toplevel(menu)
@@ -522,6 +594,7 @@ def Controls():
 	savebutton=Button(controls, text="Save and Return", font=("Arial",20), bg="#212121", fg="white", command=lambda:setcontrols(upentry.get(1.0,"end-1c"),leftentry.get(1.0,"end-1c"),rightentry.get(1.0,"end-1c"),downentry.get(1.0,"end-1c"),controls))
 	savebutton.pack()
 	controls.overrideredirect(True)
+#sets the controls in game and checks that the given key is appropriate
 def setcontrols(u,l,r,d,controls): 
 	print(u,l,r,d)
 	global up,down,left,right
@@ -580,7 +653,7 @@ def setcontrols(u,l,r,d,controls):
 		ControlsAuthentication(controls,text)
 	if not errorfound:
 		controls.destroy()
-
+# displays error message ifthe wrong input has been entered into the controls 
 def ControlsAuthentication(controls,text):
 	global menuw, menuh
 	error=Toplevel(controls)
@@ -597,6 +670,7 @@ canvas.pack()
 
 #SetBorders()
 PlaceSpacedust()
+CreateAsteroids()
 TopTenScores()
 Setdefaultcontrols()
 CreateMenu()
