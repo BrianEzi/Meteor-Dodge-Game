@@ -1,11 +1,4 @@
 Brian:19
 Brian:20
 Gary:262
-Test :31
-test:26
-Brian:18
-LOl:77
-Brian:2072
-Brian:2300
-Brian:2229
-lol:1046
+Test:31

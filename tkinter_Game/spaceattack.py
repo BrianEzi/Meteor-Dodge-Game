@@ -265,19 +265,6 @@ def TopTenScores():
 	scoreboard=temp.split("\n")
 	highscores=[0]*10
 	print(highscores)
-def GetPlayerCoords():
-	with open("lastpos.txt","r") as f:
-		coordskey=f.read()
-	playercoords=""
-	if coordskey=="1":
-		playercoords=Coordinates(player,astronaut_turbo.width(),astronaut_turbo.height())
-	elif coordskey=="2":
-		playercoords=Coordinates(player,astronaut_turbo_left.width(),astronaut_turbo_left.height())
-	elif coordskey=="3":
-		playercoords=Coordinates(player,astronaut_turbo_down.width(),astronaut_turbo_down.height())
-	elif coordskey=="4":
-		playercoords=Coordinates(player,astronaut_turbo_right.width(),astronaut_turbo_right.height())
-	return playercoords
 	names=[]
 	k=0
 	for score in scoreboard:
@@ -296,6 +283,19 @@ def GetPlayerCoords():
 		fullscoreboard.append([names[i],highscores[i]])
 	print(fullscoreboard)
 	return fullscoreboard
+def GetPlayerCoords():
+	with open("lastpos.txt","r") as f:
+		coordskey=f.read()
+	playercoords=""
+	if coordskey=="1":
+		playercoords=Coordinates(player,astronaut_turbo.width(),astronaut_turbo.height())
+	elif coordskey=="2":
+		playercoords=Coordinates(player,astronaut_turbo_left.width(),astronaut_turbo_left.height())
+	elif coordskey=="3":
+		playercoords=Coordinates(player,astronaut_turbo_down.width(),astronaut_turbo_down.height())
+	elif coordskey=="4":
+		playercoords=Coordinates(player,astronaut_turbo_right.width(),astronaut_turbo_right.height())
+	return playercoords
 def collision(a,b):
 	if a[0][0]<b[1][0] and a[1][0]>b[0][0] and a[0][1]<b[1][1] and a[1][1]>b[0][1]:
 		return True
