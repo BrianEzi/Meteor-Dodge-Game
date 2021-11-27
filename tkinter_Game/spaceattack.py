@@ -382,6 +382,7 @@ def Pause(event):
 	global paused
 	if paused:
 		paused=False
+		save_button.place(x=1200,y=0)
 	else:
 		paused=True
 		global Savebutton
