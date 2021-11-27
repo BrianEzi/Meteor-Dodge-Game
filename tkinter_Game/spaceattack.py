@@ -418,7 +418,7 @@ def SaveGametoFile(nameentry,Score_window):
 	with open("saves.txt","a") as f:
 		f.write("\n"+text+"|"+str(lives)+"|"+str(score))
 	Score_window.destroy()
-	save_dbutton.place(x=1280,y=0)
+	save_button.place(x=1280,y=0)
 	ResetGame()
 	CreateMenu()
 #
